@@ -12,6 +12,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class SwerveModule extends SubsystemBase {
     public final String name;
@@ -23,6 +24,7 @@ public class SwerveModule extends SubsystemBase {
     private MotorController drive_motor;
     private CANCoder angle_sensor;
 
+    private SimpleMotorFeedforward drive_ff;
     private PIDController angle_pid;
     private SimpleMotorFeedforward angle_ff;
     private Constraints angle_constraints;
@@ -43,13 +45,14 @@ public class SwerveModule extends SubsystemBase {
      * @param angle_sensor Module angle sensor. Should be configured to have a range
      *                     of [0,360) degrees with the positive direction
      *                     counter-clockwise
-     * @param angle_pid    Module angle PID object
-     * @param angle_ff     Module angle FeedForward object
+     * @param drive_ff     Module drive FeedForwrd parameters
+     * @param angle_pid    Module angle PID parameters
+     * @param angle_ff     Module angle FeedForward parameters
      * @param angle_prof   Module angle Trapezoidal profile object
      */
     public SwerveModule(String name, Translation2d translation, Rotation2d angle_offset, MotorController angle_motor,
-            MotorController drive_motor, CANCoder angle_sensor, PIDController angle_pid,
-            SimpleMotorFeedforward angle_ff, Constraints angle_constraints) {
+            MotorController drive_motor, CANCoder angle_sensor, Constants.SimpleFFParam drive_ff,
+            Constants.PIDParam angle_pid, Constants.SimpleFFParam angle_ff, Constraints angle_constraints) {
 
         this.name = name;
         this.translation = translation;
@@ -59,11 +62,18 @@ public class SwerveModule extends SubsystemBase {
         this.drive_motor = drive_motor;
         this.angle_sensor = angle_sensor;
 
-        this.angle_pid = angle_pid;
-        this.angle_ff = angle_ff;
+        this.drive_ff = new SimpleMotorFeedforward(drive_ff.kS, drive_ff.kV);
+        this.angle_pid = new PIDController(angle_pid.kP, angle_pid.kI, angle_pid.kD);
+        this.angle_ff = new SimpleMotorFeedforward(angle_ff.kS, angle_ff.kV);
+
         this.angle_constraints = angle_constraints;
     }
 
+    /**
+     * Sets the target state of the swerve module
+     * 
+     * @param state target state of the swerve module
+     */
     public void set_target(SwerveModuleState state) {
         set_target(state.angle, state.speedMetersPerSecond);
     }
@@ -223,10 +233,12 @@ public class SwerveModule extends SubsystemBase {
         // TODO Update set speed on Drive Station
         // TODO Update Current speed on Driver Station
 
-        if(speed_inv) {
-            drive_motor.set(-this.speed_target);
+        if (speed_inv) {
+            double drive_value = drive_ff.calculate(-this.speed_target);
+            drive_motor.setVoltage(drive_value);
         } else {
-            drive_motor.set(this.speed_target);
+            double drive_value = drive_ff.calculate(this.speed_target);
+            drive_motor.setVoltage(drive_value);
         }
 
     }
