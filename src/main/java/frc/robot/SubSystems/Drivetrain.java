@@ -53,25 +53,25 @@ public class Drivetrain extends SubsystemBase {
                 new Translation2d(-constants.module_offset, constants.module_offset), new Rotation2d(0),
                 new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
                 constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_constraints);
+                constants.drive_angle_ff, constants.angle_pos_param);
 
         rf_module = new SwerveModule("Right Front Swerve",
                 new Translation2d(constants.module_offset, constants.module_offset), new Rotation2d(0),
                 new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
                 constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_constraints);
+                constants.drive_angle_ff, constants.angle_pos_param);
 
         lr_module = new SwerveModule("Left Rear Swerve",
                 new Translation2d(-constants.module_offset, -constants.module_offset), new Rotation2d(0),
                 new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
                 constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_constraints);
+                constants.drive_angle_ff, constants.angle_pos_param);
 
         rr_module = new SwerveModule("Right Rear Swerve",
                 new Translation2d(constants.module_offset, -constants.module_offset), new Rotation2d(0),
                 new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
                 constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_constraints);
+                constants.drive_angle_ff, constants.angle_pos_param);
 
         modules.add(lf_module);
         modules.add(rf_module);

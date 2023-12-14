@@ -2,19 +2,26 @@ package frc.robot.SubSystems;
 
 import com.ctre.phoenix.sensors.CANCoder;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
-import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.util.PosController;
+import frc.robot.util.RateController;
 
 public class SwerveModule extends SubsystemBase {
+    public class AngleTarget {
+        public Rotation2d target;
+        public boolean inv_drive;
+
+        public AngleTarget(Rotation2d target, boolean inv_drive) {
+            this.target = target;
+            this.inv_drive = inv_drive;
+        }
+    }
+
     public final String name;
 
     public final Translation2d translation;
@@ -24,10 +31,8 @@ public class SwerveModule extends SubsystemBase {
     private MotorController drive_motor;
     private CANCoder angle_sensor;
 
-    private SimpleMotorFeedforward drive_ff;
-    private PIDController angle_pid;
-    private SimpleMotorFeedforward angle_ff;
-    private Constraints angle_constraints;
+    private RateController drive_rate_ctrl;
+    private PosController angle_pos_ctrl;
 
     private Rotation2d angle_target = Rotation2d.fromDegrees(0);
     private double speed_target = 0;
@@ -51,8 +56,8 @@ public class SwerveModule extends SubsystemBase {
      * @param angle_prof   Module angle Trapezoidal profile object
      */
     public SwerveModule(String name, Translation2d translation, Rotation2d angle_offset, MotorController angle_motor,
-            MotorController drive_motor, CANCoder angle_sensor, Constants.SimpleFFParam drive_ff,
-            Constants.PIDParam angle_pid, Constants.SimpleFFParam angle_ff, Constraints angle_constraints) {
+            MotorController drive_motor, CANCoder angle_sensor, RateController.FFParam drive_ff,
+            RateController.PIDParam angle_pid, RateController.FFParam angle_ff, PosController.PosParam angle_pos_param) {
 
         this.name = name;
         this.translation = translation;
@@ -62,11 +67,8 @@ public class SwerveModule extends SubsystemBase {
         this.drive_motor = drive_motor;
         this.angle_sensor = angle_sensor;
 
-        this.drive_ff = new SimpleMotorFeedforward(drive_ff.kS, drive_ff.kV);
-        this.angle_pid = new PIDController(angle_pid.kP, angle_pid.kI, angle_pid.kD);
-        this.angle_ff = new SimpleMotorFeedforward(angle_ff.kS, angle_ff.kV);
-
-        this.angle_constraints = angle_constraints;
+        this.drive_rate_ctrl = new RateController(drive_ff);
+        this.angle_pos_ctrl = new PosController(new RateController(angle_pid, angle_ff), angle_pos_param);
     }
 
     /**
@@ -162,20 +164,10 @@ public class SwerveModule extends SubsystemBase {
         return Math.abs(get_error(angle).getDegrees()) < angle_tol.getDegrees();
     }
 
-    /**
-     * Module periodic Function
-     */
-    @Override
-    public void periodic() {
-
-        // Get Module Angle
-        Rotation2d angle = get_angle();
-        double angle_rate = angle_sensor.getVelocity();
-
-        // Get Module Error
-        Rotation2d error = get_error(angle);
+    public static AngleTarget min_angle_target(Rotation2d current, Rotation2d target) {
+        Rotation2d error = target.minus(current);
         var error_abs = Math.abs(error.getDegrees());
-        boolean speed_inv = false;
+        boolean inv_drive = false;
 
         Rotation2d error_pos = get_error(angle.plus(Rotation2d.fromDegrees(360)));
         Rotation2d error_pos_inv = get_error(angle.plus(Rotation2d.fromDegrees(180)));
@@ -184,62 +176,58 @@ public class SwerveModule extends SubsystemBase {
 
         if (error_abs > Math.abs(error_pos.getDegrees())) {
             error = error_pos;
-            speed_inv = false;
+            inv_drive = false;
         }
 
         if (error_abs > Math.abs(error_pos_inv.getDegrees())) {
             error = error_pos;
-            speed_inv = true;
+            inv_drive = true;
         }
 
         if (error_abs > Math.abs(error_neg.getDegrees())) {
             error = error_neg;
-            speed_inv = false;
+            inv_drive = false;
         }
 
         if (error_abs > Math.abs(error_neg_inv.getDegrees())) {
             error = error_neg_inv;
-            speed_inv = true;
+            inv_drive = true;
         }
 
-        // Calculate target angle rate
-        double target_angle_rate = 0;
-        if (!at_angle(error)) {
-            // Get Module Angle Target
-            Rotation2d angle_target = angle.plus(error);
+        return new AngleTarget(current.plus(mod_error.error), inv_drive);
+    }
 
-            // Calculate angle speed
-            State target_state = new State(angle_target.getDegrees(), 0);
-            State initial_state = new State(angle.getDegrees(), angle_rate);
-            TrapezoidProfile profile = new TrapezoidProfile(angle_constraints, target_state, initial_state);
+    /**
+     * Module periodic Function
+     */
+    @Override
+    public void periodic() {
 
-            State target_angle_state = profile.calculate(0);
+        // Get current Module state
+        Rotation2d angle = get_angle();
+        double angle_rate = ;
 
-            target_angle_rate = target_angle_state.velocity;
-        }
-        // TODO Update target angle to Driver Station
-        // TODO Update target angle rate to Driver Station
-        // TODO Update actual angle to Driver Station
-        // TODO Update actual angle rate to Driver Station
+        // Calculate optimial target angle
+        AngleTarget angle_target = min_angle_target(angle, this.angle_target);
 
-        // Calculate
-        var angle_pid_value = angle_pid.calculate(angle_rate, target_angle_rate);
-        var angle_ff_value = angle_ff.calculate(target_angle_rate);
+        // Set Angle motor power
+        angle_volt = angle_pos_ctrl.calculate(
+            new ControlState(angle.getRadians(), angle_sensor.getVelocity()),   // Current Angle State
+            new ControlState(angle_target.target.getRadians(), 0)               // Target Angle State
+        );
 
-        angle_motor.set(angle_pid_value + angle_ff_value);
+        angle_motor.setVoltage(angle_volt);
+        
 
-        // Set Module Speed
-        // TODO Allow speed to be set in meters per second
-        // TODO Update set speed on Drive Station
-        // TODO Update Current speed on Driver Station
+        // set motor speed
+        drive_volt = drive_rate_ctrl.calculate(
+            new ControlState(drive_motor.getVelocity()),
+            new ControlState((angle_target.inv_drive ? 1 : -1) * this.speed_target);
+        )
 
-        if (speed_inv) {
-            double drive_value = drive_ff.calculate(-this.speed_target);
-            drive_motor.setVoltage(drive_value);
-        } else {
-            double drive_value = drive_ff.calculate(this.speed_target);
-            drive_motor.setVoltage(drive_value);
-        }
+        drive_motor.setVoltage(drive_volt)
+
+        // TODO Update Drivers station outputs
 
     }
 

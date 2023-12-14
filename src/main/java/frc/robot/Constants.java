@@ -3,38 +3,6 @@ package frc.robot;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 
 public class Constants {
-    public class PIDParam {
-        public double kP;
-        public double kI;
-        public double kD;
-
-        public PIDParam(double kP, double kI, double kD) {
-            this.kP = kP;
-            this.kI = kI;
-            this.kD = kD;
-        }
-    }
-
-    public class SimpleFFParam {
-        public double kS;
-        public double kV;
-        public double kA;
-
-        public SimpleFFParam(double kS, double kV) {
-            this.kS = kS;
-            this.kV = kV;
-            this.kA = 0;
-
-        }
-
-        public SimpleFFParam(double kS, double kV, double kA) {
-            this.kS = kS;
-            this.kV = kV;
-            this.kA = kA;
-
-        }
-    }
-
     class MotorSpecs {
         public final double fs;
         /** < Free speed - RPM */
@@ -99,11 +67,11 @@ public class Constants {
 
     public double drive_wheel_circ = Math.PI * 4;
 
-    public SimpleFFParam drive_ff = new SimpleFFParam(1, f500.speed_const() / 60 * drive_ratio * drive_wheel_circ);
-    public PIDParam drive_angle_pid = new PIDParam(.0001, 0, 0);
-    public SimpleFFParam drive_angle_ff = new SimpleFFParam(1, f500.speed_const() / 60 * drive_angle_ratio);
+    public RateController.FFParam drive_ff = new RateController.FFParam(1, f500.speed_const() / 60 * drive_ratio * drive_wheel_circ, RateController.FFParam.FFMode.SIMPLE);
+    public RateController.PIDParam drive_angle_pid = new RateController.PIDParam(.0001, 0, 0);
+    public RateController.FFParam drive_angle_ff = new RateController.SimpleFFParam(1, f500.speed_const() / 60 * drive_angle_ratio, RateController.FFParam.FFMode.SIMPLE);
 
-    public Constraints angle_constraints = new Constraints(720, 1440);
+    public PosController.PosParam angle_pos_param = new PosController.PosParam(2 * Math.PI, 2 * Math.PI / .05);
 
     public double robot_dims = 29.5 / .0254;
     public double module_inset = 2.5 / .0254;
