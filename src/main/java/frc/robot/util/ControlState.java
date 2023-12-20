@@ -1,6 +1,6 @@
 package frc.robot.util;
 
-class ControlState{
+public class ControlState{
     public double pos;      /**< State Position - Set to 0 if irrelevant */
     public double vel;      /**< State Velocity - Set to 0 if irrelevant */
     public double accel;    /**< State Acceleration - Set to 0 if irrelevant */

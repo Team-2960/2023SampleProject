@@ -3,7 +3,7 @@ package frc.robot.util;
 import edu.wpi.first.wpilibj.Timer;
 
 public class PosController {
-    public class PosParams {
+    public static class PosParam {
         public double max_rate;
         public double ramp_down;
         public double max_accel;
@@ -19,16 +19,13 @@ public class PosController {
             this.ramp_down = ramp_down;
             this.max_accel = max_accel;
         }
-    } 
+    }
 
-    private RateController rate_ctrl;
     private PosParam param;
     private double last_time;
 
-    public PosController(RateController rate_ctrl, PosParam param) {
-        this.rate_ctrl = rate_ctrl;
+    public PosController(PosParam param) {
         this.param = param;
-        this.timer = Timer();
 
         this.last_time = Timer.getFPGATimestamp();
     }
@@ -51,8 +48,10 @@ public class PosController {
 
         double result = max_speed;
 
-        if(Math.abs(result) > Math.abs(ramp_down)) result = ramp_down;
-        if(Math.abs(result) > Math.abs(ramp_up)) result = ramp_up;
+        if (Math.abs(result) > Math.abs(ramp_down))
+            result = ramp_down;
+        if (Math.abs(result) > Math.abs(ramp_up))
+            result = ramp_up;
 
         return result;
     }

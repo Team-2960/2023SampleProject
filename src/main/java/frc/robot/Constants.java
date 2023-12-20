@@ -1,6 +1,7 @@
 package frc.robot;
 
-import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
+import frc.robot.util.PosController;
+import frc.robot.util.RateController;
 
 public class Constants {
     class MotorSpecs {
@@ -67,9 +68,11 @@ public class Constants {
 
     public double drive_wheel_circ = Math.PI * 4;
 
-    public RateController.FFParam drive_ff = new RateController.FFParam(1, f500.speed_const() / 60 * drive_ratio * drive_wheel_circ, RateController.FFParam.FFMode.SIMPLE);
+    public RateController.FFParam drive_ff = new RateController.FFParam(1.0,
+            f500.speed_const() / 60 * drive_ratio * drive_wheel_circ);
     public RateController.PIDParam drive_angle_pid = new RateController.PIDParam(.0001, 0, 0);
-    public RateController.FFParam drive_angle_ff = new RateController.SimpleFFParam(1, f500.speed_const() / 60 * drive_angle_ratio, RateController.FFParam.FFMode.SIMPLE);
+    public RateController.FFParam drive_angle_ff = new RateController.FFParam(1,
+            f500.speed_const() / 60 * drive_angle_ratio);
 
     public PosController.PosParam angle_pos_param = new PosController.PosParam(2 * Math.PI, 2 * Math.PI / .05);
 

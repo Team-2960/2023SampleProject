@@ -3,8 +3,10 @@ package frc.robot.SubSystems;
 import java.util.ArrayList;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
-import com.ctre.phoenix.sensors.CANCoder;
 import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.SparkMaxAbsoluteEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,6 +15,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.util.Sensors.PosSensor_CTRETalonFX;
+import frc.robot.util.Sensors.PosSensor_RevSparkMax;
 
 public class Drivetrain extends SubsystemBase {
     private static Drivetrain inst;
@@ -47,32 +51,63 @@ public class Drivetrain extends SubsystemBase {
      * Constructor
      */
     private Drivetrain() {
+        // LF Swerve Module
+        Translation2d lf_pos = new Translation2d(-constants.module_offset, constants.module_offset);
+        WPI_TalonFX lf_drive_motor = new WPI_TalonFX(1);
+        CANSparkMax lf_angle_motor = new CANSparkMax(2, MotorType.kBrushless);
+        PosSensor_CTRETalonFX lf_drive_sensor = new PosSensor_CTRETalonFX(lf_drive_motor);
+        PosSensor_RevSparkMax lf_angle_sensor = new PosSensor_RevSparkMax(
+                lf_angle_motor.getAlternateEncoder(2048),
+                lf_angle_motor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle),
+                0.0);
 
-        // Initialize Swerve Modules
-        lf_module = new SwerveModule("Left Front Swerve",
-                new Translation2d(-constants.module_offset, constants.module_offset), new Rotation2d(0),
-                new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
-                constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_pos_param);
+        lf_module = new SwerveModule("Left Front Swerve", lf_pos, lf_drive_motor, lf_angle_motor, lf_drive_sensor,
+                lf_angle_sensor, constants.drive_ff, constants.drive_angle_pid, constants.drive_angle_ff,
+                constants.angle_pos_param);
 
-        rf_module = new SwerveModule("Right Front Swerve",
-                new Translation2d(constants.module_offset, constants.module_offset), new Rotation2d(0),
-                new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
-                constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_pos_param);
+        // RF Swerve Module
+        Translation2d rf_pos = new Translation2d(-constants.module_offset, constants.module_offset);
+        WPI_TalonFX rf_drive_motor = new WPI_TalonFX(1);
+        CANSparkMax rf_angle_motor = new CANSparkMax(2, MotorType.kBrushless);
+        PosSensor_CTRETalonFX rf_drive_sensor = new PosSensor_CTRETalonFX(rf_drive_motor);
+        PosSensor_RevSparkMax rf_angle_sensor = new PosSensor_RevSparkMax(
+                rf_angle_motor.getAlternateEncoder(2048),
+                rf_angle_motor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle),
+                0.0);
 
-        lr_module = new SwerveModule("Left Rear Swerve",
-                new Translation2d(-constants.module_offset, -constants.module_offset), new Rotation2d(0),
-                new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
-                constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_pos_param);
+        rf_module = new SwerveModule("Right Front Swerve", rf_pos, rf_drive_motor, rf_angle_motor, rf_drive_sensor,
+                rf_angle_sensor, constants.drive_ff, constants.drive_angle_pid, constants.drive_angle_ff,
+                constants.angle_pos_param);
 
-        rr_module = new SwerveModule("Right Rear Swerve",
-                new Translation2d(constants.module_offset, -constants.module_offset), new Rotation2d(0),
-                new WPI_TalonFX(1), new WPI_TalonFX(2), new CANCoder(3),
-                constants.drive_ff, constants.drive_angle_pid,
-                constants.drive_angle_ff, constants.angle_pos_param);
+        // LR Swerve Module
+        Translation2d lr_pos = new Translation2d(-constants.module_offset, constants.module_offset);
+        WPI_TalonFX lr_drive_motor = new WPI_TalonFX(1);
+        CANSparkMax lr_angle_motor = new CANSparkMax(2, MotorType.kBrushless);
+        PosSensor_CTRETalonFX lr_drive_sensor = new PosSensor_CTRETalonFX(lr_drive_motor);
+        PosSensor_RevSparkMax lr_angle_sensor = new PosSensor_RevSparkMax(
+                lr_angle_motor.getAlternateEncoder(2048),
+                lr_angle_motor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle),
+                0.0);
 
+        lr_module = new SwerveModule("Left Rear Swerve", lr_pos, lr_drive_motor, lr_angle_motor, lr_drive_sensor,
+                lr_angle_sensor, constants.drive_ff, constants.drive_angle_pid, constants.drive_angle_ff,
+                constants.angle_pos_param);
+
+        // RR Swerve Module
+        Translation2d rr_pos = new Translation2d(-constants.module_offset, constants.module_offset);
+        WPI_TalonFX rr_drive_motor = new WPI_TalonFX(1);
+        CANSparkMax rr_angle_motor = new CANSparkMax(2, MotorType.kBrushless);
+        PosSensor_CTRETalonFX rr_drive_sensor = new PosSensor_CTRETalonFX(rr_drive_motor);
+        PosSensor_RevSparkMax rr_angle_sensor = new PosSensor_RevSparkMax(
+                rr_angle_motor.getAlternateEncoder(2048),
+                rr_angle_motor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle),
+                0.0);
+
+        rr_module = new SwerveModule("Right Rear Swerve", rr_pos, rr_drive_motor, rr_angle_motor, rr_drive_sensor,
+                rr_angle_sensor, constants.drive_ff, constants.drive_angle_pid, constants.drive_angle_ff,
+                constants.angle_pos_param);
+
+        // Initialize Swerve Module Array
         modules.add(lf_module);
         modules.add(rf_module);
         modules.add(lr_module);
